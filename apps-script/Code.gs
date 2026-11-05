@@ -31,6 +31,74 @@ var ITEM_HEADERS = ['Timestamp', 'BillNo', 'SKU', 'Name', 'Qty', 'UnitPrice', 'L
   'LineTotal', 'PromoLabel', 'Method', 'Status'];
 var PREORDER_HEADERS = ['Timestamp', 'SKU', 'Name', 'Qty', 'Customer', 'Phone', 'Note', 'Staff'];
 var SETTINGS_HEADERS = ['Key', 'Value', 'Description'];
+var PROMO_TYPES = ['NONE', 'PERCENT', 'AMOUNT', 'BUY_X_GET_Y', 'BUNDLE', 'TIER'];
+
+/**
+ * Price list from "แบบฟอร์มรวบรวมผลิตภัณฑ์นวัตกรรมจุฬาฯ SX 6/11-15/11/2569" (ราคาที่ขาย JIP).
+ * `match` finds an existing row by name so applyPriceList() can update a sheet staff already edited.
+ */
+var PRICE_LIST = [
+  { sku: 'MUZC-01', match: /muzc/i, name: 'The Muzc แผ่นแปะสมุนไพร', group: 'กลุ่มสมุนไพร',
+    description: 'แผ่นแปะสมุนไพร บรรเทาอาการปวดและลดเมื่อยล้า', price: 269, status: 'SELL',
+    promoType: 'BUNDLE', promoValue: '3=699', promoLabel: '3 กล่อง 699', note: 'ราคาปกติ 269/กล่อง' },
+  { sku: 'KOS-3', match: /sleep.*3\s*คู่/i, name: 'KEEP ON SLEEP (3 คู่/ซอง)', group: 'กลุ่มสมุนไพร',
+    description: 'แผ่นแปะผิวหนัง เทคโนโลยี Controlled Skin Diffusion ช่วยให้ร่างกายผ่อนคลายและส่งเสริมประสิทธิภาพการนอน',
+    price: 329, status: 'SELL', promoType: 'NONE', promoValue: '', promoLabel: '', note: '' },
+  { sku: 'KOS-5', match: /sleep/i, name: 'KEEP ON SLEEP (5 คู่/ซอง)', group: 'กลุ่มสมุนไพร',
+    description: 'แผ่นแปะผิวหนัง เทคโนโลยี Controlled Skin Diffusion ช่วยให้ร่างกายผ่อนคลายและส่งเสริมประสิทธิภาพการนอน',
+    price: 429, status: 'SELL', promoType: 'TIER', promoValue: '3@399', promoLabel: '3 ซองขึ้นไป ซองละ 399', note: '' },
+  { sku: 'KOP-01', match: /party/i, name: 'KEEP ON PARTY', group: 'กลุ่มสมุนไพร',
+    description: 'แผ่นแปะ เทคโนโลยี Controlled Skin Diffusion ช่วยให้ร่างกายรู้สึกสดชื่นและฟื้นฟูร่างกายจากความอ่อนล้า',
+    price: 199, status: 'SELL', promoType: 'NONE', promoValue: '', promoLabel: '', note: '' },
+  { sku: 'INNO-SUN', match: /กันแดด|sun/i, name: 'InnoBotanica SunShield Sunscreen Serum SPF50 PA+++', group: 'Innophytotech',
+    description: 'เซรั่มกันแดด SPF50 PA+++ ซิงก์ออกไซด์จากดอกทุเรียน + สารสกัดทุเรียนอ่อน', price: 520, status: 'SELL',
+    promoType: 'BUNDLE', promoValue: '2=888', promoLabel: '2 ขวด 888 (ปกติ 750)', note: 'เทสเตอร์ 1 ชิ้น ไม่ขาย' },
+  { sku: 'INNO-SYRUP', match: /มะพร้าว|coconut/i, name: 'Syrup มะพร้าว (Sugar Reduced Coconut Sugar Syrup)', group: 'Innophytotech',
+    description: 'ไซรัปน้ำตาลมะพร้าว ลดน้ำตาลซูโครส 65% เพิ่มพรีไบโอติก FOS', price: 150, status: 'SELL',
+    promoType: 'NONE', promoValue: '', promoLabel: '', note: '' },
+  { sku: 'INNO-PALM', match: /โตนด|palmyra/i, name: 'Syrup โตนด (Sugar Reduced Palmyra Sugar Syrup)', group: 'Innophytotech',
+    description: 'ไซรัปน้ำตาลโตนด ลดน้ำตาลซูโครส 65% เพิ่มพรีไบโอติก FOS', price: 150, status: 'SELL',
+    promoType: 'NONE', promoValue: '', promoLabel: '', note: '' }
+];
+
+/**
+ * Updates Products from PRICE_LIST: sets SKU, Name, Price and promotion columns.
+ * Keeps whatever staff entered in Stock, Status, Description and Note. Adds missing products
+ * (stock 0). Run once from the Apps Script editor or the "POS JIP" menu.
+ */
+function applyPriceList() {
+  var sh = SpreadsheetApp.getActive().getSheetByName(SHEETS.PRODUCTS);
+  if (!sh) throw new Error('ยังไม่ได้ตั้งค่าชีต — กรุณารัน setup() ก่อน');
+  sh.getRange('I:I').setNumberFormat('@');
+  addValidation_(sh, 'H', PROMO_TYPES);
+  var rows = readTable_(SHEETS.PRODUCTS);
+  var used = {};
+  var col = function (h) { return PRODUCT_HEADERS.indexOf(h) + 1; };
+  var log = [];
+
+  PRICE_LIST.forEach(function (e) {
+    var free = rows.filter(function (r) { return !used[r._row]; });
+    var skuOf = function (r) { return String(r.SKU).trim(); };
+    var row = free.filter(function (r) { return skuOf(r) === e.sku && e.match.test(String(r.Name)); })[0] ||
+      free.filter(function (r) { return skuOf(r) === e.sku; })[0] ||
+      free.filter(function (r) { return e.match.test(String(r.Name)); })[0];
+    if (row) {
+      used[row._row] = true;
+      sh.getRange(row._row, col('SKU'), 1, 2).setValues([[e.sku, e.name]]);
+      sh.getRange(row._row, col('Price')).setValue(e.price);
+      sh.getRange(row._row, col('PromoType'), 1, 3).setValues([[e.promoType, e.promoValue, e.promoLabel]]);
+      if (!row.Note && e.note) sh.getRange(row._row, col('Note')).setValue(e.note);
+      log.push('อัปเดต ' + e.sku + ' (แถว ' + row._row + ')');
+    } else {
+      sh.appendRow([e.sku, e.name, e.group, e.description, e.price, 0, e.status,
+        e.promoType, e.promoValue, e.promoLabel, e.note]);
+      log.push('เพิ่มใหม่ ' + e.sku + ' (สต็อก 0 — กรุณากรอก)');
+    }
+  });
+  SpreadsheetApp.flush();
+  Logger.log(log.join('\n'));
+  return log.join('\n');
+}
 
 /* ------------------------------------------------------------------ */
 /*  Web app entry                                                      */
@@ -52,6 +120,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('POS JIP')
     .addItem('ตั้งค่าชีตเริ่มต้น (Setup sheets)', 'setup')
+    .addItem('อัปเดตราคา/โปรตามใบราคา (Apply price list)', 'applyPriceList')
     .addItem('สรุปยอดขายวันนี้ (Today summary)', 'showTodaySummary')
     .addToUi();
 }
@@ -66,34 +135,22 @@ function setup() {
 
   var products = ensureSheet_(ss, SHEETS.PRODUCTS, PRODUCT_HEADERS);
   if (products.getLastRow() < 2) {
-    var seed = [
-      ['MUZC-01', 'The Muzc แผ่นแปะสมุนไพร', 'กลุ่มสมุนไพร',
-        'แผ่นแปะสมุนไพร บรรเทาอาการปวดและลดเมื่อยล้า', 0, 0, 'SELL', 'NONE', '', '', ''],
-      ['KOS-01', 'KEEP ON SLEEP', 'กลุ่มสมุนไพร',
-        'แผ่นแปะผิวหนัง เทคโนโลยี Controlled Skin Diffusion ช่วยให้ร่างกายผ่อนคลายและส่งเสริมประสิทธิภาพการนอน',
-        0, 0, 'SELL', 'NONE', '', '', ''],
-      ['KOP-01', 'KEEP ON PARTY', 'กลุ่มสมุนไพร',
-        'แผ่นแปะ เทคโนโลยี Controlled Skin Diffusion ช่วยให้ร่างกายรู้สึกสดชื่นและฟื้นฟูร่างกายจากความอ่อนล้า',
-        0, 0, 'SELL', 'NONE', '', '', ''],
-      ['INNO-SUN', 'กันแดด Innophytotech', 'Innophytotech',
-        'ครีมกันแดด (มีตัวเทสเตอร์ 1 ชิ้นที่บูธ)', 0, 0, 'SELL', 'NONE', '', '', 'เทสเตอร์ 1 ชิ้น ไม่ขาย'],
-      ['INNO-SYRUP', 'Syrup มะพร้าว', 'Innophytotech',
-        'ตัวโชว์ — รับพรีออเดอร์ (ทีม Innophytotech ติดต่อลูกค้าโดยตรง)', 0, 0, 'PREORDER', 'NONE', '', '', ''],
-      ['INNO-COOKIE', 'คุกกี้ฟักทอง', 'Innophytotech',
-        'ตัวโชว์ — รับพรีออเดอร์ (ทีม Innophytotech ติดต่อลูกค้าโดยตรง)', 0, 0, 'PREORDER', 'NONE', '', '', '']
-    ];
+    var seed = PRICE_LIST.map(function (e) {
+      return [e.sku, e.name, e.group, e.description, e.price, 0, e.status, e.promoType, e.promoValue, e.promoLabel, e.note];
+    });
     products.getRange(2, 1, seed.length, seed[0].length).setValues(seed);
   }
   products.getRange('E:E').setNumberFormat('#,##0.00');
   products.getRange('I:I').setNumberFormat('@'); // keep '2+1' / '3=250' as text
   addValidation_(products, 'G', ['SELL', 'PREORDER', 'HIDDEN']);
-  addValidation_(products, 'H', ['NONE', 'PERCENT', 'AMOUNT', 'BUY_X_GET_Y', 'BUNDLE']);
+  addValidation_(products, 'H', PROMO_TYPES);
   products.getRange('H1').setNote(
     'NONE = ไม่มีโปร\n' +
     'PERCENT = ลด % ต่อชิ้น  (PromoValue เช่น 10)\n' +
     'AMOUNT = ลดบาทต่อชิ้น  (PromoValue เช่น 20)\n' +
     'BUY_X_GET_Y = ซื้อ X แถม Y  (PromoValue เช่น 2+1)\n' +
-    'BUNDLE = เหมาราคา  (PromoValue เช่น 3=250  คือ 3 ชิ้น 250 บาท)');
+    'BUNDLE = เหมาราคา  (PromoValue เช่น 3=250  คือ 3 ชิ้น 250 บาท)\n' +
+    'TIER = ซื้อครบ N ชิ้น ราคาชิ้นละ  (PromoValue เช่น 3@399  คือ ซื้อ 3 ชิ้นขึ้นไป ชิ้นละ 399)');
   products.getRange('G1').setNote(
     'SELL = ขายหน้างาน\nPREORDER = ตัวโชว์/รับพรีออเดอร์ (ไม่ตัดสต็อก)\nHIDDEN = ซ่อนจากหน้า POS');
 
@@ -238,6 +295,11 @@ function calcLine_(p, qty) {
         var sets = Math.floor(qty / n);
         discount = Math.max(0, sets * (n * p.price - bp));
       }
+      break;
+    }
+    case 'TIER': {
+      var t = String(v).match(/^\s*(\d+)\s*@\s*([\d.]+)\s*$/);
+      if (t && qty >= +t[1]) discount = Math.max(0, qty * (p.price - +t[2]));
       break;
     }
   }

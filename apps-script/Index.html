@@ -309,11 +309,13 @@ function api(fn) {
 
 var DemoServer = (function () {
   var products = [
-    { sku: 'MUZC-01', name: 'The Muzc แผ่นแปะสมุนไพร', group: 'กลุ่มสมุนไพร', description: 'แผ่นแปะสมุนไพร บรรเทาอาการปวดและลดเมื่อยล้า', price: 150, stock: 30, status: 'SELL', promoType: 'BUY_X_GET_Y', promoValue: '2+1', promoLabel: 'ซื้อ 2 แถม 1', note: '' },
-    { sku: 'KOS-01', name: 'KEEP ON SLEEP', group: 'กลุ่มสมุนไพร', description: 'แผ่นแปะผิวหนัง เทคโนโลยี Controlled Skin Diffusion ช่วยให้ร่างกายผ่อนคลายและส่งเสริมประสิทธิภาพการนอน', price: 290, stock: 20, status: 'SELL', promoType: 'PERCENT', promoValue: '10', promoLabel: 'ลด 10%', note: '' },
-    { sku: 'KOP-01', name: 'KEEP ON PARTY', group: 'กลุ่มสมุนไพร', description: 'แผ่นแปะ เทคโนโลยี Controlled Skin Diffusion ช่วยให้ร่างกายรู้สึกสดชื่นและฟื้นฟูร่างกายจากความอ่อนล้า', price: 290, stock: 3, status: 'SELL', promoType: 'BUNDLE', promoValue: '2=500', promoLabel: '2 ชิ้น 500', note: '' },
-    { sku: 'INNO-SUN', name: 'กันแดด Innophytotech', group: 'Innophytotech', description: 'ครีมกันแดด (มีตัวเทสเตอร์ 1 ชิ้นที่บูธ)', price: 390, stock: 12, status: 'SELL', promoType: 'NONE', promoValue: '', promoLabel: '', note: '' },
-    { sku: 'INNO-SYRUP', name: 'Syrup มะพร้าว', group: 'Innophytotech', description: 'ตัวโชว์ — รับพรีออเดอร์', price: 0, stock: 0, status: 'PREORDER', promoType: 'NONE', promoValue: '', promoLabel: '', note: '' },
+    { sku: 'MUZC-01', name: 'The Muzc แผ่นแปะสมุนไพร', group: 'กลุ่มสมุนไพร', description: 'แผ่นแปะสมุนไพร บรรเทาอาการปวดและลดเมื่อยล้า', price: 269, stock: 30, status: 'SELL', promoType: 'BUNDLE', promoValue: '3=699', promoLabel: '3 กล่อง 699', note: '' },
+    { sku: 'KOS-3', name: 'KEEP ON SLEEP (3 คู่/ซอง)', group: 'กลุ่มสมุนไพร', description: 'แผ่นแปะผิวหนัง เทคโนโลยี Controlled Skin Diffusion ช่วยให้ร่างกายผ่อนคลายและส่งเสริมประสิทธิภาพการนอน', price: 329, stock: 20, status: 'SELL', promoType: 'NONE', promoValue: '', promoLabel: '', note: '' },
+    { sku: 'KOS-5', name: 'KEEP ON SLEEP (5 คู่/ซอง)', group: 'กลุ่มสมุนไพร', description: 'แผ่นแปะผิวหนัง เทคโนโลยี Controlled Skin Diffusion ช่วยให้ร่างกายผ่อนคลายและส่งเสริมประสิทธิภาพการนอน', price: 429, stock: 20, status: 'SELL', promoType: 'TIER', promoValue: '3@399', promoLabel: '3 ซองขึ้นไป ซองละ 399', note: '' },
+    { sku: 'KOP-01', name: 'KEEP ON PARTY', group: 'กลุ่มสมุนไพร', description: 'แผ่นแปะ เทคโนโลยี Controlled Skin Diffusion ช่วยให้ร่างกายรู้สึกสดชื่นและฟื้นฟูร่างกายจากความอ่อนล้า', price: 199, stock: 3, status: 'SELL', promoType: 'NONE', promoValue: '', promoLabel: '', note: '' },
+    { sku: 'INNO-SUN', name: 'InnoBotanica SunShield Sunscreen Serum SPF50 PA+++', group: 'Innophytotech', description: 'เซรั่มกันแดด SPF50 PA+++ ซิงก์ออกไซด์จากดอกทุเรียน + สารสกัดทุเรียนอ่อน', price: 520, stock: 20, status: 'SELL', promoType: 'BUNDLE', promoValue: '2=888', promoLabel: '2 ขวด 888 (ปกติ 750)', note: '' },
+    { sku: 'INNO-SYRUP', name: 'Syrup มะพร้าว (Sugar Reduced Coconut Sugar Syrup)', group: 'Innophytotech', description: 'ไซรัปน้ำตาลมะพร้าว ลดน้ำตาลซูโครส 65% เพิ่มพรีไบโอติก FOS', price: 150, stock: 20, status: 'SELL', promoType: 'NONE', promoValue: '', promoLabel: '', note: '' },
+    { sku: 'INNO-PALM', name: 'Syrup โตนด (Sugar Reduced Palmyra Sugar Syrup)', group: 'Innophytotech', description: 'ไซรัปน้ำตาลโตนด ลดน้ำตาลซูโครส 65% เพิ่มพรีไบโอติก FOS', price: 150, stock: 20, status: 'SELL', promoType: 'NONE', promoValue: '', promoLabel: '', note: '' },
     { sku: 'INNO-COOKIE', name: 'คุกกี้ฟักทอง', group: 'Innophytotech', description: 'ตัวโชว์ — รับพรีออเดอร์', price: 0, stock: 0, status: 'PREORDER', promoType: 'NONE', promoValue: '', promoLabel: '', note: '' }
   ];
   var promotions = [{ name: 'ซื้อครบ 1,000 ลด 50', type: 'AMOUNT', minTotal: 1000, value: 50 }];
@@ -373,6 +375,9 @@ function calcLine(p, qty) {
   } else if (p.promoType === 'BUNDLE') {
     var b = String(v).match(/^\s*(\d+)\s*=\s*([\d.]+)\s*$/);
     if (b) discount = Math.max(0, Math.floor(qty / +b[1]) * (+b[1] * p.price - +b[2]));
+  } else if (p.promoType === 'TIER') {
+    var t = String(v).match(/^\s*(\d+)\s*@\s*([\d.]+)\s*$/);
+    if (t && qty >= +t[1]) discount = Math.max(0, qty * (p.price - +t[2]));
   }
   discount = r2(Math.min(discount, gross));
   return { gross: r2(gross), discount: discount, total: r2(gross - discount) };
@@ -407,6 +412,14 @@ var fmt = function (n) { return '฿' + Number(n || 0).toLocaleString('th-TH', {
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function store(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } }
 
+// Google Drive "share" links open a viewer page, not an image — convert them to a direct image URL.
+function imageUrl(u) {
+  u = String(u || '').trim();
+  if (!u) return '';
+  var m = /drive\.google\.com/.test(u) && (u.match(/\/d\/([\w-]{10,})/) || u.match(/[?&]id=([\w-]{10,})/));
+  return m ? 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1000' : u;
+}
+
 function bySku(sku) { return state.products.find(function (p) { return p.sku === sku; }); }
 
 function promoText(p) {
@@ -417,6 +430,7 @@ function promoText(p) {
   if (p.promoType === 'AMOUNT') return 'ลด ' + v + ' บาท';
   if (p.promoType === 'BUY_X_GET_Y') { var m = String(v).split('+'); return 'ซื้อ ' + m[0] + ' แถม ' + (m[1] || ''); }
   if (p.promoType === 'BUNDLE') { var b = String(v).split('='); return b[0] + ' ชิ้น ' + (b[1] || '') + ' บาท'; }
+  if (p.promoType === 'TIER') { var t = String(v).split('@'); return t[0] + ' ชิ้นขึ้นไป ชิ้นละ ' + (t[1] || ''); }
   return '';
 }
 
@@ -509,7 +523,8 @@ function applyData(d) {
   state.settings = d.settings || {};
   $('shopName').textContent = state.settings.SHOP_NAME || 'POS JIP';
   $('eventName').textContent = state.settings.EVENT_NAME || '';
-  $('qrImg').src = state.settings.QR_IMAGE_URL || window.EMBEDDED_QR || '';
+  $('qrImg').onerror = function () { if (window.EMBEDDED_QR && this.src !== window.EMBEDDED_QR) this.src = window.EMBEDDED_QR; };
+  $('qrImg').src = imageUrl(state.settings.QR_IMAGE_URL) || window.EMBEDDED_QR || '';
   // Drop cart items that are no longer sellable
   Object.keys(state.cart).forEach(function (sku) { var p = bySku(sku); if (!p || p.status !== 'SELL') delete state.cart[sku]; });
   render();
